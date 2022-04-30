@@ -43,8 +43,7 @@ router.post("/getprofile", (req, res) => {
             .json({
               error: false,
               data: {
-                firstName: vendor.firstName,
-                lastName: vendor.lastName,
+                vendorName: vendor.vendorName,
                 email: vendor.email,
                 registerDate: vendor.registerDate,
                 status: vendor.status
@@ -87,9 +86,12 @@ router.post("/register", (req, res) => {
             message: "This email is already registered with another account! Kindly use a different email address."
           });
       } else {
-        const newUser = new vendorModel({
-          firstName: req.body.firstName,
-          lastName: req.body.lastName,
+        const newVendor = new vendorModel({
+          vendorName: req.body.vendorName,
+          vendorType: req.body/vendorType,
+          registerDocs: req.body.registerDocs,
+          companyAddress: req.body.companyAddress,
+          coords: req.body.coords,
           email: req.body.email,
           password: req.body.password,
           confirmationCode: getConfirmationCode()
@@ -97,18 +99,18 @@ router.post("/register", (req, res) => {
   
         // Hash password before saving in database
         bcrypt.genSalt(10, (err, salt) => {
-          bcrypt.hash(newUser.password, salt, (err, hash) => {
+          bcrypt.hash(newVendor.password, salt, (err, hash) => {
             if (err) throw err;
-            newUser.password = hash;
-            newUser
+            newVendor.password = hash;
+            newVendor
               .save()
               .then((vendor) => {
 
                 var mailOptions = {
                   from: '"TCGFISH" <maaz.haque17@gmail.com>',
-                  to: newUser.email,
+                  to: newVendor.email,
                   subject: 'TCGFISH ACCOUNT VERIFICATION',
-                  html: '<body><h2>Hello '+ newUser.firstName +'</h2><p> Please follow the link below to verify your account:</p><a href="http://www.google.com">VERIFY</a></body>'
+                  html: '<body><h2>Hello '+ newVendor.vendorName +'</h2><p> Please follow the link below to verify your account:</p><a href="http://www.google.com">VERIFY</a></body>'
                 };
 
                 transport.sendMail(mailOptions, (error, info) => {
@@ -122,8 +124,6 @@ router.post("/register", (req, res) => {
                   console.log('Message sent: %s', info.messageId);
                     res.status(200).json({
                     error: false,
-                    error: false,
-                    vendor:vendor,
                     message: "vendor successfully registered! Check email for account verification!",
                   })
                 })
@@ -177,41 +177,41 @@ router.post("/login", (req, res) => {
           error: false,
           message: "Account verification pending. Follow the link sent to your registered email address to verify account!"
         })
+      } else {
+        // Check password
+        bcrypt.compare(password, vendor.password).then((isMatch) => {
+          if (isMatch) {
+            // vendor matched, create jwt payload
+            const payload = {
+              id: vendor._id,
+              vendorName: vendor.vendorName,
+              email: vendor.email,
+              registerDate: vendor.registerDate,
+              status: vendor.status
+            };
+    
+            // Sign token
+            jwt.sign(
+              payload,
+              process.env.ENCRYPTION_SECRET,
+              { expiresIn: 604800 },
+              (err, token) => {
+                res.json({
+                  error: false,
+                  token: token,
+                });
+              }
+            );
+          } else {
+            return res
+            .status(200)
+            .json({
+              error: true,
+              message: "Password incorrect!"
+            });
+          }
+        });
       }
-      // Check password
-      bcrypt.compare(password, vendor.password).then((isMatch) => {
-        if (isMatch) {
-          // vendor matched, create jwt payload
-          const payload = {
-            id: vendor._id,
-            firstName: vendor.firstName,
-            lastName: vendor.lastName,
-            email: vendor.email,
-            registerDate: vendor.registerDate,
-            status: vendor.status
-          };
-  
-          // Sign token
-          jwt.sign(
-            payload,
-            process.env.ENCRYPTION_SECRET,
-            { expiresIn: 31556926 },
-            (err, token) => {
-              res.json({
-                error: false,
-                token: token,
-              });
-            }
-          );
-        } else {
-          return res
-          .status(200)
-          .json({
-            error: true,
-            message: "Password incorrect!"
-          });
-        }
-      });
     });
   });
 
@@ -257,39 +257,6 @@ router.post("/login", (req, res) => {
       })
       .catch((e) => console.log("error", e));
   })
-
-
-// get vendor favourites POST Route
-// @route POST api/vendors/getfavourites
-// @desc get favourite cards for any vendor
-// @access Limited
-router.post('/getfavourites', (req, res) => {
-  let token = req.body.token
-
-  jwt.verify(token, process.env.ENCRYPTION_SECRET, (err, decoded) => {
-    if(err){
-      return res.status(200).json({
-        error: true,
-        message: err.message
-      })
-    } else {
-      vendorModel.findById(decoded.id, {favourites: 1}, (error, docs) => {
-        if(error){
-          return res.status(200).json({
-            error: true,
-            message: 'Unexpected error occured!'
-          })
-        } else {
-          return res.status(200).json({
-            error: false,
-            message: 'Found favourites for vendor!',
-            data: docs
-          })
-        }
-      })
-    }
-  })
-})
 
 module.exports = router;
   

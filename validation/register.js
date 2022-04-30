@@ -5,20 +5,28 @@ const validateRegisterInput = (data) => {
     let errors = {}
 
     // Convert fields into empty string initially
-    data.firstName = !isEmpty(data.firstName)? data.firstName:''
-    data.lastName = !isEmpty(data.lastName)? data.lastName:''
+    data.vendorName = !isEmpty(data.vendorName)? data.vendorName:''
     data.email = !isEmpty(data.email)? data.email:''
     data.password = !isEmpty(data.password)? data.password:''
     data.password2 = !isEmpty(data.password2)? data.password2:''
+    data.vendorType = !isEmpty(data.vendorType)? data.vendorType:''
+    data.companyAddress = !isEmpty(data.companyAddress)? data.companyAddress:''
 
-    // firstName Check
-    if(validator.isEmpty(data.firstName)){
-        errors.firstName = "Name field is required"
+
+    // Vendor Name Check
+    if(validator.isEmpty(data.vendorName)){
+        errors.vendorName = "Name field is required"
     }
 
-    // lastName Check
-    if(validator.isEmpty(data.lastName)){
-        errors.lastName = "Name field is required"
+    // Vendor Type check
+    if(validator.isEmpty(data.vendorType)){
+        errors.vendorType = "Vendor type/nature of business is required"
+    } else if(!validator.isIn(data.vendorType, ['type1', 'type2'])){
+        errors.vendorType = "Vendor type/nature of business is invalid!"
+    }
+
+    if(validator.isEmpty(data.companyAddress)){
+        errors.companyAddress = "Company address is required"
     }
 
     // Email Check

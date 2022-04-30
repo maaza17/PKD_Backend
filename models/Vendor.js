@@ -1,12 +1,14 @@
 const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-    firstName: {
+    vendorName: {
         type: String,
         required: true
     },
-    lastName: {
+    vendorType: {
         type: String,
+        enum: ['type1', 'type2'],
+        default: 'type1',
         required: true
     },
     email: {
@@ -21,6 +23,24 @@ const userSchema = new mongoose.Schema({
         type: Date,
         required: true,
         default: Date.now
+    },
+    registerDocs: {
+        type: [String],
+        default: [],
+        required: true
+    },
+    companyAddress: {
+        type: String,
+        required: true,
+        default: ''
+    },
+    coords: {
+        type: {
+            latitude: Number,
+            longitude: Number,
+            _id: false
+        },
+        reduired: true
     },
     status: {
         type: String,
